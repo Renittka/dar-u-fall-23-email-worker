@@ -1,6 +1,6 @@
 package kz.dar.university.email.worker.config;
 
-import kz.dar.university.email.worker.domain.Greeting;
+import kz.dar.university.email.worker.domain.TaskDetailed;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.common.serialization.StringDeserializer;
 import org.springframework.beans.factory.annotation.Value;
@@ -10,7 +10,6 @@ import org.springframework.kafka.config.ConcurrentKafkaListenerContainerFactory;
 import org.springframework.kafka.core.ConsumerFactory;
 import org.springframework.kafka.core.DefaultKafkaConsumerFactory;
 import org.springframework.kafka.support.converter.StringJsonMessageConverter;
-import org.springframework.kafka.support.serializer.JsonDeserializer;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -25,13 +24,7 @@ public class KafkaConsumerConfig {
     private String groupId;
 
     @Bean
-    public ConsumerFactory<String, Greeting> consumerFactory() {
-
-        JsonDeserializer<Greeting> deserializer = new JsonDeserializer<>(Greeting.class);
-        deserializer.setRemoveTypeHeaders(false);
-        deserializer.addTrustedPackages("*");
-        deserializer.setUseTypeMapperForKey(true);
-
+    public ConsumerFactory<String, Object> consumerFactory() {
         Map<String, Object> props = new HashMap<>();
         props.put(
                 ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG,
@@ -47,18 +40,19 @@ public class KafkaConsumerConfig {
         );
         props.put(
                 ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG,
-                deserializer
+                StringDeserializer.class
         );
 
-        return new DefaultKafkaConsumerFactory<>(props, new StringDeserializer(), deserializer);
+        return new DefaultKafkaConsumerFactory<>(props);
     }
 
     @Bean
-    public ConcurrentKafkaListenerContainerFactory<String, Greeting> kafkaListenerContainerFactory() {
+    public ConcurrentKafkaListenerContainerFactory<String, TaskDetailed> kafkaListenerContainerFactory() {
 
-        ConcurrentKafkaListenerContainerFactory<String, Greeting> factory =
+        ConcurrentKafkaListenerContainerFactory<String, TaskDetailed> factory =
                 new ConcurrentKafkaListenerContainerFactory<>();
         factory.setConsumerFactory(consumerFactory());
+        factory.setRecordMessageConverter(new StringJsonMessageConverter());
 
         return factory;
     }
